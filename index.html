@@ -119,6 +119,7 @@ input[type=text]{font:600 1.2rem var(--f-display);padding:12px 16px;border-radiu
 .groups.sm .grp{--d:9px;padding:5px;border-radius:12px;gap:2px;width:calc(var(--per) * (var(--d) + 2px) + 14px)}
 .groups.sm{gap:6px;justify-content:center}
 .vis{display:flex;flex-direction:column;gap:8px;align-items:center;width:100%}
+.fb .vis{align-items:flex-start}.fb .groups.sm{justify-content:flex-start}
 .nlwrap{display:flex;max-width:100%;overflow-x:auto;padding-bottom:4px}
 .nl{flex:none;display:block;margin:0 auto}
 .nl line{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
@@ -289,10 +290,10 @@ function numline(g,s,back){const N=Math.max(g,10),u=Math.max(48,String(N*s).leng
     h+=`<path class="bk" d="M${X} 126 Q${m} 164 ${X2} 126"/><text class="j" x="${m}" y="168">−${s}</text>`}
   return h+'</svg></div>'}
 function groupsHTML(g,s,sm){let h=`<div class="groups${sm?' sm':''}">`;for(let i=0;i<g;i++)h+=`<div class="grp" style="--per:${Math.min(s,5)}">${'<i></i>'.repeat(s)}</div>`;return h+'</div>'}
-function visual(a,b){let turned=false;
-  if(a<b&&b>=7){[a,b]=[b,a];turned=true}
-  const k=10-a,back=(a<10&&k<=3)?`<p>Eerst 10 × ${b} = ${10*b}. Dan ${k} ${k===1?'sprong':'sprongen'} terug.</p>`:'';
-  return `<div class="vis"><p class="muted">${turned?'Omgedraaid: ':''}${a} groepjes van ${b}</p>${groupsHTML(a,b,true)}${back}${numline(a,b,true)}</div>`}
+/* Zelfde beeld als de les "Tel de groepjes": groepjes, som, getallijn tot 10 sprongen. Nooit omdraaien. */
+function visual(a,b,reveal){a=Math.min(a,10);b=Math.min(b,10);
+  return `<div class="vis"><div>${groupsHTML(a,b,a>5)}</div>${reveal?`<div class="eqbig">${a} × ${b} = <span class="hl">${a*b}</span></div>`:''}
+  <p class="muted">Op de getallijn maak je ${a} ${a===1?'sprong':'sprongen'} van ${b}.</p>${numline(a,b,b<10)}</div>`}
 const stars$=n=>[1,2,3].map(i=>`<span class="${i<=n?'':'off'}">⭐</span>`).join('');
 function mon(n,big){const s=stars(n);const sc=1+.12*s;
   return `<span class="monster" style="font-size:${big?4.4*sc:3*sc}rem">${s?MON[n]:'🥚'}${s>=3?'<span class="crown">👑</span>':''}</span>`}
@@ -405,7 +406,7 @@ function setSlot(){const s=$('#slot');if(!s)return;s.textContent=G.typed||'?';s.
 function key(k){if(G.wait)return;const q=G.qs[G.i];if(G.typed.length>=String(q.ans).length)return;G.typed+=k;snd.pop();setSlot();
   if(G.typed.length===String(q.ans).length)setTimeout(()=>answer(false),180)}
 function hint(){if(G.wait||G.hint)return;const q=G.qs[G.i];G.hint=true;
-  $('#vis').innerHTML=visual(Math.min(q.a,10),Math.min(q.b,10))+`<p class="muted" style="margin-top:6px">${esc(strategy(q.a,q.b))}</p>`}
+  $('#vis').innerHTML=visual(q.a,q.b,false)}
 function answer(timeout){if(G.wait)return;G.wait=true;clearTimers();const q=G.qs[G.i],ms=Date.now()-G.t0,ok=!timeout&&+G.typed===q.ans,qc=$('#qc');
   $('#pad').dataset.off='1';
   if(ok){snd.ok();qc.classList.add('ok');G.correct++;if(!q.retry)G.first++;G.coins+=(ms<3500&&!G.hint)?2:1;
@@ -414,10 +415,9 @@ function answer(timeout){if(G.wait)return;G.wait=true;clearTimers();const q=G.qs
   else{snd.no();qc.classList.add('no');record(q.a,q.b,false,ms);
     $('#slot').textContent=q.ans;
     if(G.mode==='oefen'&&!q.retry)G.qs.push(Object.assign({},q,{retry:true}));
-    const full=q.type==='mul'?`${q.a} × ${q.b} = ${q.ans}`:`${q.a} × ${q.b} = ${q.a*q.b}`;
     if(G.mode==='flits'){$('#fb').innerHTML=`<div class="card fb"><b>${timeout?'Te langzaam. ':'Net niet. '}Het antwoord is ${q.ans}.</b></div>`;setTimeout(next,1700)}
-    else{$('#vis').innerHTML=visual(Math.min(q.a,10),Math.min(q.b,10));
-      $('#fb').innerHTML=`<div class="card fb"><h3>Bijna! ${esc(full)}</h3><p class="strat">${esc(strategy(q.a,q.b))}</p><button class="btn teal" data-act="next">Ik snap het</button></div>`}}}
+    else{$('#vis').innerHTML='';
+      $('#fb').innerHTML=`<div class="card fb"><h3>Bijna! Kijk maar:</h3>${visual(q.a,q.b,true)}<button class="btn teal" data-act="next">Ik snap het</button></div>`}}}
 function next(){G.i++;if(G.i>=G.qs.length)finish();else game()}
 
 function finish(){const p=P(),m=G.mode,n=G.n;let pass,need,lvl=0,bonus=0;
