@@ -198,15 +198,16 @@ ul{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 <canvas id="conf"></canvas>
 
 <script>
-const ORDER=[10,5,2,1,4,3,9,6,8,7];
+const ORDER=[10,5,2,1,3,4,6,9,8,7];
 const MON={1:'🐥',2:'🐰',3:'🐱',4:'🐶',5:'🦊',6:'🐼',7:'🦄',8:'🐙',9:'🐲',10:'🦁'};
 const BOSS={1:'👾',2:'🤖',3:'👹',4:'🐉',5:'🦖',6:'🧟',7:'👻',8:'🦂',9:'🧌',10:'👺'};
 const AVATARS=['🦸','🧙','🥷','🧑‍🚀','🧜','🤖','🐸','🦊'];
 const STICKERS=['🚀','🌈','🦄','🍕','⚽','🎸','🐳','🦖','🍩','🎈','🐝','🌵','🍉','🛸','🐧','🎨','🦋','🍦','🐢','🏰','🦜','🍓','🎯','🐙','🌻','🚒','🦁','🎃','🧁','🪁','🐼','🍭','🦉','🏆','🌋','🐞','🎺','🚲','🍄','⭐'];
 const CHEST=25;
 const THINGS=[['zakjes','knikkers'],['dozen','koekjes'],['bakjes','aardbeien'],['rijen','stoelen'],['pakjes','stickers'],['vazen','bloemen'],['tassen','appels'],['bordjes','pannenkoeken']];
-const TIPS={10:'Zet een nul achter het getal.',5:'Neem eerst 10× en haal de helft. Of tel in sprongen van 5, zoals op de klok.',2:'Het dubbele: twee keer hetzelfde getal.',1:'Eén groepje. Het getal blijft hetzelfde.',
-  4:'Dubbel en nog eens dubbel.',3:'Eerst 2×, dan nog één groepje erbij.',9:'Neem 10× en haal er één groepje af.',6:'Eerst 5×, dan nog één groepje erbij.',8:'Eerst 4×, dan het dubbele.',7:'Eerst 5×, dan 2× erbij.'};
+const TIPS={10:'Zet een 0 achter het getal.',5:'Het antwoord eindigt op 0 of 5. Tel in vijfjes, zoals op de klok.',2:'Het dubbele: twee keer hetzelfde getal.',1:'Eén groepje. Het getal blijft hetzelfde.',
+  3:'Eerst 2×, dan nog één groepje erbij. Controle: tel de cijfers van het antwoord op. Je krijgt 3, 6 of 9.',4:'Het dubbele van de tafel van 2.',6:'Het dubbele van de tafel van 3.',
+  9:'Neem 10× en haal er één groepje af. Controle: de cijfers van het antwoord zijn samen 9.',8:'Het dubbele van de tafel van 4.',7:'Bijna alles ken je al door omdraaien. Alleen 7 × 7 is nieuw: 5 × 7 en 2 × 7 samen.'};
 
 /* ---------- opslag ---------- */
 const KEY='tafelrijk-v1';
@@ -252,21 +253,23 @@ function toast(m){const e=document.createElement('div');e.className='toast';e.te
 const $=s=>document.querySelector(s);
 
 /* ---------- didactiek: strategieën ---------- */
-const PREF=[10,1,2,5,4,9,3,6,8,7];
-function strategyFor(f,o){const p=f*o;
+const PREF=[10,1,2,5,3,4,6,9,8,7];
+const ds=p=>String(p).split('').map(Number);
+function strategyFor(f,o){const p=f*o,d=ds(p),chk=(p>=10)?` Controle: ${d.join(' + ')} = ${d.reduce((x,y)=>x+y,0)}.`:'';
   switch(f){
-    case 1:return `1 × ${o} is één groepje van ${o}. Dat is ${p}.`;
-    case 10:return `10 × ${o}: zet een nul achter ${o}. Dat is ${p}.`;
-    case 2:return `2 × ${o} is het dubbele: ${o} + ${o} = ${p}.`;
-    case 5:return `5 × ${o}: eerst 10 × ${o} = ${10*o}, en de helft daarvan is ${p}.`;
-    case 4:return `4 × ${o}: dubbel en nog eens dubbel. ${o} → ${2*o} → ${p}.`;
-    case 9:return `9 × ${o}: 10 × ${o} = ${10*o}, min ${o} is ${p}.`;
-    case 3:return `3 × ${o}: 2 × ${o} = ${2*o}, plus nog ${o} is ${p}.`;
-    case 6:return `6 × ${o}: 5 × ${o} = ${5*o}, plus nog ${o} is ${p}.`;
-    case 8:return `8 × ${o}: 4 × ${o} = ${4*o}, en dat dubbel is ${p}.`;
-    default:return `7 × ${o}: 5 × ${o} = ${5*o}, plus 2 × ${o} = ${2*o}. Samen ${p}.`}}
+    case 1:return `1 × ${o} is gewoon ${o}.`;
+    case 10:return `10 × ${o}: zet een 0 achter de ${o}. Dat is ${p}.`;
+    case 2:return `2 × ${o} is dubbel: ${o} + ${o} = ${p}.`;
+    case 5:return `5 × ${o}: tel in vijfjes, zoals op de klok: ${Array.from({length:o},(_,i)=>5*(i+1)).join(', ')}. Dat is ${p}.`;
+    case 3:return `3 × ${o}: eerst 2 × ${o} = ${2*o}. Plus ${o} is ${p}.${chk}`;
+    case 4:return `4 × ${o}: dubbel van 2 × ${o}. 2 × ${o} = ${2*o}, dubbel is ${p}.`;
+    case 6:return `6 × ${o}: dubbel van 3 × ${o}. 3 × ${o} = ${3*o}, dubbel is ${p}.`;
+    case 9:return `9 × ${o}: eerst 10 × ${o} = ${10*o}. Min ${o} is ${p}.${chk}`;
+    case 8:return `8 × ${o}: dubbel van 4 × ${o}. 4 × ${o} = ${4*o}, dubbel is ${p}.`;
+    default:return `7 × ${o}: 5 × ${o} = ${5*o} en 2 × ${o} = ${2*o}. Samen ${p}.`}}
 function strategy(a,b){let f=a,o=b;if(PREF.indexOf(b)<PREF.indexOf(a)){f=b;o=a}
-  return (f!==a?`Draai om: ${a} × ${b} = ${f} × ${o}. `:'')+strategyFor(f,o)}
+  if(b===9&&a>=3&&a<=8){f=9;o=a}else if(a===9&&b>=3&&b<=8){f=9;o=b} /* 9 × o = 10 × o min o, past bij de getallijn */
+  return (f!==a?'Draai om. ':'')+strategyFor(f,o)}
 function arr(rows,cols,ds){let h=`<div class="arr" style="--ds:${ds||18}px" role="img" aria-label="${rows} rijen van ${cols}">`;
   for(let r=0;r<rows;r++){h+='<div class="r">';for(let c=0;c<cols;c++)h+=`<i class="${c<5?'a':'b'}${c===4&&cols>5?' gap':''}"></i>`;h+='</div>'}return h+'</div>'}
 /* Getallijn: g sprongen van s, elke sprong een boogje met de tussenstand eronder. */
@@ -286,10 +289,10 @@ function numline(g,s,back){const N=Math.max(g,10),u=Math.max(48,String(N*s).leng
     h+=`<path class="bk" d="M${X} 126 Q${m} 164 ${X2} 126"/><text class="j" x="${m}" y="168">−${s}</text>`}
   return h+'</svg></div>'}
 function groupsHTML(g,s,sm){let h=`<div class="groups${sm?' sm':''}">`;for(let i=0;i<g;i++)h+=`<div class="grp" style="--per:${Math.min(s,5)}">${'<i></i>'.repeat(s)}</div>`;return h+'</div>'}
-function visual(a,b){let note='';
-  if(a<b&&b>=7){note=`<p>Draai om: ${a} × ${b} is ${b} × ${a}. Zo kun je terugtellen vanaf 10 × ${a} = ${10*a}.</p>`;[a,b]=[b,a]}
-  const nb=a<10&&10-a<=3,back=nb?`<p>Loop door tot 10 × ${b} = ${10*b}. Tel dan ${10-a} ${10-a===1?'sprong':'sprongen'} van ${b} terug. Dan kom je op <b>${a*b}</b>.</p>`:'';
-  return `<div class="vis">${note}<p class="muted">${a} groepjes van ${b}</p>${groupsHTML(a,b,true)}${back}${numline(a,b,true)}</div>`}
+function visual(a,b){let turned=false;
+  if(a<b&&b>=7){[a,b]=[b,a];turned=true}
+  const k=10-a,back=(a<10&&k<=3)?`<p>Eerst 10 × ${b} = ${10*b}. Dan ${k} ${k===1?'sprong':'sprongen'} terug.</p>`:'';
+  return `<div class="vis"><p class="muted">${turned?'Omgedraaid: ':''}${a} groepjes van ${b}</p>${groupsHTML(a,b,true)}${back}${numline(a,b,true)}</div>`}
 const stars$=n=>[1,2,3].map(i=>`<span class="${i<=n?'':'off'}">⭐</span>`).join('');
 function mon(n,big){const s=stars(n);const sc=1+.12*s;
   return `<span class="monster" style="font-size:${big?4.4*sc:3*sc}rem">${s?MON[n]:'🥚'}${s>=3?'<span class="crown">👑</span>':''}</span>`}
@@ -349,7 +352,7 @@ function lesson(){const n=L.n,st=L.step,o=n===6?7:(n===3?4:6);let body='';
     <button class="btn teal" data-act="addg" ${g>=10?'disabled':''}>+ Nog een groepje</button>`}
   else if(st===1){body=`<h2>Slimme truc</h2><p class="tip">${TIPS[n]}</p>
     <div class="card" style="width:100%"><p class="tip"><b>Voorbeeld:</b> ${strategyFor(n,o)}</p></div>${arr(Math.min(n,10),o,16)}
-    <p class="muted">${n} rijen van ${o}. De kleuren laten groepjes van 5 zien, zodat je sneller telt.</p>
+    <p class="muted">${n} rijen van ${o}. De kleuren helpen: eerst 5, dan de rest.</p>
     <p class="tip">Zo ziet het eruit op de getallijn: ${n} sprongen van ${o}.</p><div class="vis">${numline(n,o)}</div>`}
   else if(st===2){body=`<h2>Draai om</h2><p class="tip">${n} × ${o} en ${o} × ${n} geven hetzelfde antwoord. Dat scheelt de helft van het leren!</p>
     <div class="row" style="align-items:flex-start;gap:24px"><div>${arr(n,o,13)}<p class="eqbig" style="font-size:1.4rem">${n} × ${o} = ${n*o}</p></div>
@@ -463,8 +466,8 @@ function parents(){const p=P();
   <button class="btn ghost" data-act="reset" id="rs">Wis voortgang</button></div></div>
   <div class="card"><h3>Zo is het opgebouwd</h3><ul>
   <li><b>Eerst begrijpen, dan automatiseren.</b> De les laat groepjes en rechthoeken met stippen zien (in blokken van 5) voordat er getimed wordt.</li>
-  <li><b>Van makkelijk naar moeilijk.</b> Volgorde: 10, 5, 2, 1, 4, 3, 9, 6, 8, 7. De moeilijke tafels leunen op de makkelijke.</li>
-  <li><b>Afleiden met slimme strategieën.</b> Dubbel, 10× min 1×, 5× plus 1×. Na een fout volgt direct uitleg met een plaatje.</li>
+  <li><b>Van makkelijk naar moeilijk.</b> Volgorde: 10, 5, 2, 1, 3, 4, 6, 9, 8, 7. De moeilijke tafels leunen op de makkelijke (4 = dubbel van 2, 6 = dubbel van 3, 8 = dubbel van 4).</li>
+  <li><b>Afleiden met slimme strategieën.</b> Tellen in vijfjes, dubbel, 10× min 1×, en de cijfersom als controle bij 3 en 9. Na een fout volgt direct uitleg met een plaatje.</li>
   <li><b>Omdraaien.</b> 3 × 7 is 7 × 3. Het spel oefent beide richtingen.</li>
   <li><b>Verbanden.</b> Ontbrekend getal (4 × ? = 28), deelsommen (28 : 4) en contextsommen komen terug in de baasrondes en dagmissie.</li>
   <li><b>Kort en vaak.</b> De dagmissie duurt ongeveer drie minuten en kiest vooral sommen die nog moeilijk zijn of lang niet geoefend.</li>
